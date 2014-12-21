@@ -8,6 +8,7 @@ var Point = require('./geometry/Point');
 
 class Region {
 
+  // TODO store points as bit array
   constructor(rect:Rect, points:Array) {
     this.rect = rect;
     this.points = points;
@@ -18,6 +19,7 @@ class Region {
     return `[Region ${this.rect} ${this.points}]`;
   }
 
+  // TODO add periodic checks
   mutate() : Array {
 
     if (this.still) {
@@ -89,6 +91,8 @@ class Region {
           }
         }
       }
+
+      // FIXME support region shrinking and splitting
 
       if (!points.length) {
         return [];

@@ -1,0 +1,25 @@
+.Button {
+  font-size 12px
+  padding 4px 6px
+  background linear-gradient(to bottom, #eee, #ddd)
+
+  border-radius 2px
+  cursor pointer
+
+  &.Button--disabled {
+    color #888
+    cursor default
+
+    &:hover {
+      background linear-gradient(to bottom, #eee, #ddd)
+    }
+  }
+
+  &:hover {
+    background #eee
+  }
+
+  & + & {
+    margin-left 10px
+  }
+}

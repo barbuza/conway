@@ -3,16 +3,26 @@ var classSet = require('react/lib/cx');
 var Long = require('long');
 var Numeral = require('numeral');
 var debounce = require('debounce');
-var _ = require('lodash');
 
 var Region = require('./../Region');
 var Game = require('./../Game');
 var Rect = require('../geometry/Rect');
 
+var Button = require('./Button');
+
 require('./GameUI.styl');
 
 
-var PointUI = React.createClass({
+var PATTERNS = [
+  require('../../patterns/pulsar.cells'),
+  require('../../patterns/p54shuttle.cells'),
+  require('../../patterns/p42glidershuttle.cells'),
+  require('../../patterns/blinkerfuse.cells'),
+  require('../../patterns/fly.cells')
+];
+
+
+var Cell = React.createClass({
 
   propTypes: {
     pixelSize: React.PropTypes.number.isRequired,
@@ -34,7 +44,7 @@ var PointUI = React.createClass({
     if (px > 8) {
       borderRadius = 2;
     }
-    return <div className='Point' style={{transform: `translate(${x}px, ${y}px)`, width: size, height: size, borderRadius}} />;
+    return <div className='Cell' style={{transform: `translate(${x}px, ${y}px)`, width: size, height: size, borderRadius}} />;
   }
 
 });
@@ -52,6 +62,8 @@ var RegionUI = React.createClass({
   render() {
     var r = this.props.region;
     var px = this.props.pixelSize;
+
+    // FIXME do not calculate screen position before intersection check
     var screenX = r.rect.left.subtract(this.props.x).toInt() * px;
     var screenY = r.rect.top.subtract(this.props.y).toInt() * px;
     var screenWidth = r.rect.width * px;
@@ -62,7 +74,7 @@ var RegionUI = React.createClass({
 
     if (viewport.intersects(regionRect)) {
 
-      var points = r.points.map((point, idx) => <PointUI key={idx} pixelSize={px} x={point.x} y={point.y} />);
+      var points = r.points.map((point, idx) => <Cell key={idx} pixelSize={px} x={point.x} y={point.y} />);
 
       var className = classSet({
         'Region': true,
@@ -90,18 +102,11 @@ var RegionUI = React.createClass({
 });
 
 
-var SHIPS = {
-  pulsar: require('../../patterns/pulsar.cells'),
-  p54shuttle: require('../../patterns/p54shuttle.cells'),
-  p42glidershuttle: require('../../patterns/p42glidershuttle.cells')
-};
-
-
 var GameUI = React.createClass({
 
   getInitialState() {
     var game = new Game(Long.MAX_UNSIGNED_VALUE, Long.MAX_UNSIGNED_VALUE);
-    game.addShip(10, 10, SHIPS.pulsar);
+    game.addShip(50, 10, PATTERNS[1].data);
 
     return {
       x: Long.fromInt(0),
@@ -109,31 +114,43 @@ var GameUI = React.createClass({
       pixelSize: 10,
       timeTaken: 0,
       showRegions: true,
-      game: game
+      game: game,
+      duration: 50,
+      running: false,
+      dragging: false,
+      draggingOrigin: null
     }
   },
 
-  merge() {
-    this.state.game.merge();
-    this.forceUpdate();
-  },
-
   mutate() {
+    if (!this.isMounted()) {
+      return;
+    }
+
     var start = performance.now();
     this.state.game.merge();
     this.state.game.mutate();
     var timeTaken = performance.now() - start;
     this.setState({timeTaken});
-    this.forceUpdate();
+
+    this.forceUpdate(function() {
+      if (this.state.running) {
+        setTimeout(this.mutate, this.state.duration);
+      }
+    }.bind(this));
   },
 
   start() {
-    requestAnimationFrame(function() {
-      this.mutate();
-      setTimeout(function() {
-        this.start();
-      }.bind(this), 100);
-    }.bind(this));
+    this.setState({
+      running: true
+    });
+    this.mutate();
+  },
+
+  stop() {
+    this.setState({
+      running: false
+    });
   },
 
   captureMouse(e) {
@@ -142,8 +159,15 @@ var GameUI = React.createClass({
 
   setPixelSize(e) {
     var pixelSize = parseInt(e.target.value);
-    if (!isNaN(pixelSize) && isFinite(pixelSize) && pixelSize >= 2 && pixelSize <= 40) {
+    if (!isNaN(pixelSize) && pixelSize >= 2 && pixelSize <= 40) {
       this.setState({pixelSize});
+    }
+  },
+
+  setDuration(e) {
+    var duration = parseInt(e.target.value);
+    if (!isNaN(duration) && duration >= 30 && duration <= 10000) {
+      this.setState({duration});
     }
   },
 
@@ -194,7 +218,7 @@ var GameUI = React.createClass({
 
   setShip(data) {
     var game = new Game(Long.MAX_UNSIGNED_VALUE, Long.MAX_UNSIGNED_VALUE);
-    game.addShip(10, 10, data);
+    game.addShip(50, 10, data);
     this.setState({game});
   },
 
@@ -205,10 +229,10 @@ var GameUI = React.createClass({
                   x={this.state.x} y={this.state.y}
                   pixelSize={this.state.pixelSize} />);
 
-    var shipsMenu = _.map(SHIPS, function(data, name) {
+    var shipsMenu = PATTERNS.map(function(ship, idx) {
       return (
-        <div key={name} className='Game-shipButton' onClick={this.setShip.bind(this, data)}>
-        {name}
+        <div key={idx} className='Game-shipButton' onClick={this.setShip.bind(this, ship.data)}>
+        {ship.name}
         </div>
       );
     }, this);
@@ -217,19 +241,35 @@ var GameUI = React.createClass({
       <div className='Game'>
         <canvas ref='grid' className='Game-grid' />
         <div className='Game-controls' onMouseDown={this.captureMouse}>
+
           <div>
             <span>pixel size</span>
             <input value={this.state.pixelSize} type='number' onChange={this.setPixelSize} />
           </div>
-          <button onClick={this.merge}>merge</button>
-          <button onClick={this.mutate}>mutate</button>
-          <button onClick={this.start}>start</button>
+
+          <div>
+            <span>interval</span>
+            <input value={this.state.duration} type='number' onChange={this.setDuration} />
+          </div>
+
+          <div className='Game-buttons'>
+            <Button disabled={this.state.running} onClick={this.mutate}>mutate</Button>
+            <Button disabled={this.state.running} onClick={this.start}>start</Button>
+            <Button disabled={!this.state.running} onClick={this.stop}>stop</Button>
+          </div>
+
           <div>
             <label htmlFor='id-show-regions'>show regions</label>
             <input type='checkbox' onChange={this.setShowRegions} checked={this.state.showRegions} />
           </div>
+
           <div>time taken {Numeral(this.state.timeTaken).format('0.00')}ms</div>
-          {shipsMenu}
+          <div>generation {this.state.game.generation}</div>
+
+          <div className='Game-shipsMenu'>
+            {shipsMenu}
+          </div>
+
         </div>
         {regions}
       </div>

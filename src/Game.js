@@ -67,6 +67,7 @@ class Game {
     this.width = width;
     this.height = height;
     this.regions = [];
+    this.generation = 1;
   }
 
   addPoint(point:Point) : void {
@@ -106,6 +107,7 @@ class Game {
     this.regions = this.regions.reduce(function(acc, reg) {
       return acc.concat(reg.mutate());
     }, []);
+    this.generation += 1;
   }
 
 }
