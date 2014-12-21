@@ -1,0 +1,27 @@
+{
+  "name": "conway",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "webpack -c --bail",
+    "dev": "webpack-dev-server -d --port 3000 -c"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "autoprefixer-loader": "^1.0.0",
+    "big-number": "^0.3.1",
+    "css-loader": "^0.9.0",
+    "jsx-loader": "^0.12.2",
+    "long": "^2.2.3",
+    "ndarray": "^1.0.16",
+    "nib": "^1.0.4",
+    "react": "^0.12.2",
+    "style-loader": "^0.8.2",
+    "stylus": "^0.49.3",
+    "stylus-loader": "^0.5.0",
+    "webpack": "^1.4.13",
+    "webpack-dev-server": "^1.6.6"
+  }
+}
