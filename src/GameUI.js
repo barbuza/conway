@@ -1,16 +1,26 @@
 var React = require('react');
-var BigNum = require('big-number').n;
+var Long = require('long');
+
+var Region = require('./Region');
+var Game = require('./Game');
 
 require('./GameUI.styl');
 
 
 var RegionUI = React.createClass({
 
+  propTypes: {
+    region: React.PropTypes.instanceOf(Region).isRequired,
+    pixelSize: React.PropTypes.number.isRequired,
+    x: React.PropTypes.instanceOf(Long).isRequired,
+    y: React.PropTypes.instanceOf(Long).isRequired
+  },
+
   render() {
     var r = this.props.region;
     var px = this.props.pixelSize;
-    var screenX = parseInt(r.rect.left.subtract(this.props.x).val(), 10) * px;
-    var screenY = parseInt(r.rect.top.subtract(this.props.y).val(), 10) * px;
+    var screenX = r.rect.left.subtract(this.props.x).toInt() * px;
+    var screenY = r.rect.top.subtract(this.props.y).toInt() * px;
     var screenWidth = r.rect.width * px;
     var screenHeight = r.rect.height * px;
     var points = r.points.map((point, idx) =>
@@ -26,6 +36,10 @@ var RegionUI = React.createClass({
 
 
 var GameUI = React.createClass({
+
+  propTypes: {
+    game: React.PropTypes.instanceOf(Game).isRequired
+  },
 
   getInitialState() {
     return {
@@ -58,7 +72,7 @@ var GameUI = React.createClass({
   render() {
     console.log(this.props.game.regions.map(x => x.rect).toString());
     var regions = this.props.game.regions.map((r, idx) =>
-        <RegionUI region={r} key={idx} x={BigNum(this.state.x)} y={BigNum(this.state.y)} pixelSize={this.state.pixelSize} />);
+        <RegionUI region={r} key={idx} x={Long.fromInt(this.state.x)} y={Long.fromInt(this.state.y)} pixelSize={this.state.pixelSize} />);
 
     return (
       <div className='Game'>

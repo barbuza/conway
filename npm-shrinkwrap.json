@@ -33,11 +33,6 @@
         }
       }
     },
-    "big-number": {
-      "version": "0.3.1",
-      "from": "big-number@*",
-      "resolved": "https://registry.npmjs.org/big-number/-/big-number-0.3.1.tgz"
-    },
     "css-loader": {
       "version": "0.9.0",
       "from": "css-loader@*",
@@ -61,6 +56,11 @@
           "resolved": "https://registry.npmjs.org/graceful-fs/-/graceful-fs-2.0.3.tgz"
         }
       }
+    },
+    "expose-loader": {
+      "version": "0.6.0",
+      "from": "expose-loader@*",
+      "resolved": "https://registry.npmjs.org/expose-loader/-/expose-loader-0.6.0.tgz"
     },
     "inherits": {
       "version": "2.0.1",
@@ -225,6 +225,11 @@
         }
       }
     },
+    "long": {
+      "version": "2.2.3",
+      "from": "long@*",
+      "resolved": "https://registry.npmjs.org/long/-/long-2.2.3.tgz"
+    },
     "memory-fs": {
       "version": "0.1.0",
       "from": "memory-fs@0.1.0",
@@ -239,6 +244,18 @@
           "version": "0.0.8",
           "from": "minimist@0.0.8",
           "resolved": "https://registry.npmjs.org/minimist/-/minimist-0.0.8.tgz"
+        }
+      }
+    },
+    "ndarray": {
+      "version": "1.0.16",
+      "from": "ndarray@*",
+      "resolved": "https://registry.npmjs.org/ndarray/-/ndarray-1.0.16.tgz",
+      "dependencies": {
+        "iota-array": {
+          "version": "1.0.0",
+          "from": "iota-array@>=1.0.0 <2.0.0",
+          "resolved": "https://registry.npmjs.org/iota-array/-/iota-array-1.0.0.tgz"
         }
       }
     },

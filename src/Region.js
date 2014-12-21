@@ -1,9 +1,8 @@
-var ndarray = require('ndarray');
+var ndarray = require('expose?ndarray!ndarray');
 var stepLife = require('./stepLife');
 var Rect = require('./Rect');
 var Size = require('./Size');
-
-window.ndarray = ndarray;
+var Point = require('./Point');
 
 
 class Region {

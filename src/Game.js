@@ -1,4 +1,4 @@
-var BigNum = require('big-number').n;
+var Long = require('long');
 
 var Point = require('./Point');
 var Size = require('./Size');
@@ -6,7 +6,7 @@ var Rect = require('./Rect');
 var Region = require('./Region');
 
 
-function mergeRegions(regions:Array) {
+function mergeRegions(regions:Array) : Array {
   regions = regions.slice(0);
   for (var ri = 0; ri < regions.length; ri++) {
     for (var rs = ri + 1; rs < regions.length; rs++) {
@@ -24,74 +24,64 @@ function mergeRegions(regions:Array) {
 }
 
 
-function _mergeRegions(r1:Region, r2:Region) {
+function _mergeRegions(r1:Region, r2:Region) : Region {
   var o1 = r1.rect.origin;
   var o2 = r2.rect.origin;
-  var x = o1.x.lt(o2.x) ? o1.x : o2.x;
-  var y = o1.y.lt(o2.y) ? o1.y : o2.y;
+  var x = o1.x.lessThan(o2.x) ? o1.x : o2.x;
+  var y = o1.y.lessThan(o2.y) ? o1.y : o2.y;
   var origin = new Point(x, y);
 
   var e1 = r1.rect.edge;
   var e2 = r2.rect.edge;
-  x = e1.x.gt(e2.x) ? e1.x : e2.x;
-  y = e1.y.gt(e2.y) ? e1.y : e2.y;
+  x = e1.x.greaterThan(e2.x) ? e1.x : e2.x;
+  y = e1.y.greaterThan(e2.y) ? e1.y : e2.y;
   var edge = new Point(x, y);
 
-  var width = parseInt(edge.x.subtract(origin.x).val(), 10);
-  var height = parseInt(edge.y.subtract(origin.y).val(), 10);
+  var width = edge.x.subtract(origin.x).toInt();
+  var height = edge.y.subtract(origin.y).toInt();
 
   var rect = new Rect(origin, new Size(width, height));
 
   var points = [];
 
-  var dx = parseInt(origin.x.subtract(o1.x).val(), 10);
-  var dy = parseInt(origin.y.subtract(o1.y).val(), 10);
+  var dx = origin.x.subtract(o1.x).toInt();
+  var dy = origin.y.subtract(o1.y).toInt();
+
   r1.points.forEach(function(p) {
     points.push(new Point(p.x - dx, p.y - dy));
   });
 
-  dx = parseInt(origin.x.subtract(o2.x).val(), 10);
-  dy = parseInt(origin.y.subtract(o2.y).val(), 10);
+  dx = origin.x.subtract(o2.x).toInt();
+  dy = origin.y.subtract(o2.y).toInt();
   r2.points.forEach(function(p) {
     points.push(new Point(p.x - dx, p.y - dy));
   });
 
-  var reg = new Region(rect, points);
-  //console.log(r1.toString(), ' + ', r2.toString(), '  ==>  ', reg.toString());
-  return reg;
+  return new Region(rect, points);
 }
 
 
 class Game {
 
-  /**
-   *
-   * @param width {BigNum}
-   * @param height {BigNum}
-   */
-  constructor(width, height) {
+  constructor(width:Long, height:Long) {
     this.width = width;
     this.height = height;
     this.regions = [];
   }
 
-  /**
-   *
-   * @param point {Point}
-   */
-  addPoint(point) {
-    var origin = new Point(BigNum(point.x.val()).subtract(1), BigNum(point.y.val()).subtract(1));
+  addPoint(point:Point) : void {
+    var origin = point.translate(-1, -1);
     var size = new Size(3, 3);
     var rect = new Rect(origin, size);
     var region = new Region(rect, [new Point(1, 1)]);
     this.regions.push(region);
   }
 
-  addCell(x, y) {
-    this.addPoint(new Point( BigNum(x), BigNum(y) ));
+  addCell(x:Number, y:Number) : void {
+    this.addPoint(new Point( Long.fromInt(x), Long.fromInt(y) ));
   }
 
-  addGlider(x, y) {
+  addGlider(x:Number, y:Number) : void {
     this.addCell(x + 1, y);
     this.addCell(x + 2, y + 1);
     this.addCell(x, y + 2);
@@ -99,7 +89,7 @@ class Game {
     this.addCell(x + 2, y + 2);
   }
 
-  addReverseGlider(x, y) {
+  addReverseGlider(x:Number, y:Number) : void {
     this.addCell(x + 1, y);
     this.addCell(x, y + 1);
     this.addCell(x, y + 2);
