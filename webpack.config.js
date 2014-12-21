@@ -8,7 +8,8 @@ module.exports = {
   module: {
     loaders: [
       {test: /\.styl$/, loader: 'style!css!autoprefixer!stylus'},
-      {test: /\.js$/, loader: 'jsx?harmony&es5&stripTypes'}
+      {test: /\.js$/, loader: 'jsx?harmony&es5&stripTypes'},
+      {test: /\.cells$/, loaders: ['json', require.resolve('./src/cells-loader.js')]}
     ]
   }
 };

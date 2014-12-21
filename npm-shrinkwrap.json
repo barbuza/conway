@@ -45,6 +45,18 @@
         }
       }
     },
+    "debounce": {
+      "version": "1.0.0",
+      "from": "debounce@*",
+      "resolved": "https://registry.npmjs.org/debounce/-/debounce-1.0.0.tgz",
+      "dependencies": {
+        "date-now": {
+          "version": "1.0.1",
+          "from": "date-now@1.0.1",
+          "resolved": "https://registry.npmjs.org/date-now/-/date-now-1.0.1.tgz"
+        }
+      }
+    },
     "enhanced-resolve": {
       "version": "0.7.6",
       "from": "enhanced-resolve@0.7.6",
@@ -66,6 +78,11 @@
       "version": "2.0.1",
       "from": "inherits@2.0.1",
       "resolved": "https://registry.npmjs.org/inherits/-/inherits-2.0.1.tgz"
+    },
+    "json-loader": {
+      "version": "0.5.1",
+      "from": "json-loader@*",
+      "resolved": "https://registry.npmjs.org/json-loader/-/json-loader-0.5.1.tgz"
     },
     "jsx-loader": {
       "version": "0.12.2",
@@ -225,6 +242,11 @@
         }
       }
     },
+    "lodash": {
+      "version": "2.4.1",
+      "from": "lodash@*",
+      "resolved": "https://registry.npmjs.org/lodash/-/lodash-2.4.1.tgz"
+    },
     "long": {
       "version": "2.2.3",
       "from": "long@*",
@@ -256,6 +278,37 @@
           "version": "1.0.0",
           "from": "iota-array@>=1.0.0 <2.0.0",
           "resolved": "https://registry.npmjs.org/iota-array/-/iota-array-1.0.0.tgz"
+        }
+      }
+    },
+    "ndarray-bit": {
+      "version": "1.0.0",
+      "from": "ndarray-bit@*",
+      "resolved": "https://registry.npmjs.org/ndarray-bit/-/ndarray-bit-1.0.0.tgz",
+      "dependencies": {
+        "minimal-bit-array": {
+          "version": "1.0.0",
+          "from": "minimal-bit-array@>=1.0.0 <2.0.0",
+          "resolved": "https://registry.npmjs.org/minimal-bit-array/-/minimal-bit-array-1.0.0.tgz"
+        }
+      }
+    },
+    "ndarray-ops": {
+      "version": "1.2.2",
+      "from": "ndarray-ops@*",
+      "resolved": "https://registry.npmjs.org/ndarray-ops/-/ndarray-ops-1.2.2.tgz",
+      "dependencies": {
+        "cwise-compiler": {
+          "version": "1.0.0",
+          "from": "cwise-compiler@>=1.0.0 <2.0.0",
+          "resolved": "https://registry.npmjs.org/cwise-compiler/-/cwise-compiler-1.0.0.tgz",
+          "dependencies": {
+            "uniq": {
+              "version": "1.0.1",
+              "from": "uniq@>=1.0.0 <2.0.0",
+              "resolved": "https://registry.npmjs.org/uniq/-/uniq-1.0.1.tgz"
+            }
+          }
         }
       }
     },
@@ -328,6 +381,11 @@
           }
         }
       }
+    },
+    "numeral": {
+      "version": "1.5.3",
+      "from": "numeral@*",
+      "resolved": "https://registry.npmjs.org/numeral/-/numeral-1.5.3.tgz"
     },
     "optimist": {
       "version": "0.6.1",

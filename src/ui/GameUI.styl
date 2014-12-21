@@ -1,0 +1,44 @@
+body {
+  margin 0
+  font-family 'Audiowide', cursive
+}
+
+grid-color = #aaa
+
+.Game {
+  min-width 100vw
+  min-height 100vh
+
+  &-controls {
+    position fixed
+    right 0
+    top 0
+    padding 1em
+    background #ccc
+  }
+
+  &-grid {
+    position fixed
+    top 0
+    left 0
+  }
+}
+
+.Region {
+  position fixed
+
+  &--withFrame {
+    background rgba(red, 0.08)
+    box-shadow inset 0px 0px 1px rgba(red, 0.4)
+
+    &.Region--still {
+      background rgba(mediumseagreen, 0.1)
+      box-shadow inset 0px 0px 1px rgba(mediumseagreen, 0.5)
+    }
+  }
+}
+
+.Point {
+  position absolute
+  background #000
+}

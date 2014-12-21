@@ -1,8 +1,8 @@
 var Long = require('long');
 
-var Point = require('./Point');
-var Size = require('./Size');
-var Rect = require('./Rect');
+var Point = require('./geometry/Point');
+var Size = require('./geometry/Size');
+var Rect = require('./geometry/Rect');
 var Region = require('./Region');
 
 
@@ -81,20 +81,21 @@ class Game {
     this.addPoint(new Point( Long.fromInt(x), Long.fromInt(y) ));
   }
 
-  addGlider(x:Number, y:Number) : void {
-    this.addCell(x + 1, y);
-    this.addCell(x + 2, y + 1);
-    this.addCell(x, y + 2);
-    this.addCell(x + 1, y + 2);
-    this.addCell(x + 2, y + 2);
-  }
+  addShip(originX:Number, originY:Number, data:Object) : void {
+    var origin = (new Point(Long.fromInt(originX), Long.fromInt(originY))).translate(-1, -1);
+    var size = new Size(data[0].length + 2, data.length + 2);
+    var rect = new Rect(origin, size);
+    var region = new Region(rect, []);
 
-  addReverseGlider(x:Number, y:Number) : void {
-    this.addCell(x + 1, y);
-    this.addCell(x, y + 1);
-    this.addCell(x, y + 2);
-    this.addCell(x + 1, y + 2);
-    this.addCell(x + 2, y + 2);
+    data.forEach(function(row, y) {
+      row.forEach(function(cell, x) {
+        if (cell) {
+          region.points.push(new Point(x + 1, y + 1));
+        }
+      }, this);
+    }, this);
+
+    this.regions.push(region);
   }
 
   merge() {
@@ -102,7 +103,9 @@ class Game {
   }
 
   mutate() {
-    this.regions = this.regions.map(x => x.mutate());
+    this.regions = this.regions.reduce(function(acc, reg) {
+      return acc.concat(reg.mutate());
+    }, []);
   }
 
 }
