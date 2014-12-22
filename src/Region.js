@@ -81,6 +81,31 @@ class Region {
       if (expandBottom) {
         height += 1;
       }
+
+
+      // trim left
+      var trimLeft = true;
+      for (x = 0; x <= 1 && trimLeft; x++) {
+        for (y = 0; y < next.shape[1] && trimLeft; y++) {
+          if (next.get(x, y)) {
+            trimLeft = false;
+            break;
+          }
+        }
+      }
+
+      // trim right
+      var trimRight = true;
+      for (x = next.shape[0] - 2; x <= next.shape[0] - 1 && trimRight; x++) {
+        for (y = 0; y < next.shape[1] && trimRight; y++) {
+          if (next.get(x, y)) {
+            trimRight = false;
+            break;
+          }
+        }
+      }
+
+
       var rect = new Rect(origin, new Size(width, height));
 
       var points = [];

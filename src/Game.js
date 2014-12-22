@@ -82,8 +82,8 @@ class Game {
     this.addPoint(new Point( Long.fromInt(x), Long.fromInt(y) ));
   }
 
-  addShip(originX:Number, originY:Number, data:Object) : void {
-    var origin = (new Point(Long.fromInt(originX), Long.fromInt(originY))).translate(-1, -1);
+  addShip(originX:Long, originY:Long, data:Object) : void {
+    var origin = (new Point(originX, originY)).translate(-1, -1);
     var size = new Size(data[0].length + 2, data.length + 2);
     var rect = new Rect(origin, size);
     var region = new Region(rect, []);

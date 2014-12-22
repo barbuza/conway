@@ -18,7 +18,11 @@ var PATTERNS = [
   require('../../patterns/p54shuttle.cells'),
   require('../../patterns/p42glidershuttle.cells'),
   require('../../patterns/blinkerfuse.cells'),
-  require('../../patterns/fly.cells')
+  require('../../patterns/fly.cells'),
+  require('../../patterns/crab.cells'),
+  require('../../patterns/canadagoose.cells'),
+  require('../../patterns/enterprise.cells'),
+  require('../../patterns/seal.cells')
 ];
 
 
@@ -106,18 +110,23 @@ var GameUI = React.createClass({
 
   getInitialState() {
     var game = new Game(Long.MAX_UNSIGNED_VALUE, Long.MAX_UNSIGNED_VALUE);
-    game.addShip(50, 10, PATTERNS[1].data);
+    game.addShip(Long.fromInt(10), Long.fromInt(10), PATTERNS[1].data);
 
     return {
       x: Long.fromInt(0),
       y: Long.fromInt(0),
+      width: 0,
+      height: 0,
       pixelSize: 10,
+
       timeTaken: 0,
       showRegions: true,
       game: game,
       duration: 50,
       running: false,
+
       dragging: false,
+      draggingFrom: null,
       draggingOrigin: null
     }
   },
@@ -159,9 +168,16 @@ var GameUI = React.createClass({
 
   setPixelSize(e) {
     var pixelSize = parseInt(e.target.value);
-    if (!isNaN(pixelSize) && pixelSize >= 2 && pixelSize <= 40) {
-      this.setState({pixelSize});
+    if (!isNaN(pixelSize) && pixelSize >= 1 && pixelSize <= 40) {
+      this.setState({pixelSize}, this.updateViewportSize);
     }
+  },
+
+  visualCenter() {
+    return {
+      x: this.state.x.add(Math.floor(this.state.width / 2)),
+      y: this.state.y.add(Math.floor(this.state.height / 2))
+    };
   },
 
   setDuration(e) {
@@ -199,7 +215,15 @@ var GameUI = React.createClass({
 
   handleWindowResize: debounce(function() {
     this.renderGrid();
+    this.updateViewportSize();
   }, 50),
+
+  updateViewportSize() {
+    this.setState({
+      width: Math.ceil(window.innerWidth / this.state.pixelSize),
+      height: Math.ceil(window.innerHeight / this.state.pixelSize)
+    });
+  },
 
   componentDidUpdate(prevProps, prevState) {
     if (prevState.pixelSize != this.state.pixelSize) {
@@ -209,6 +233,7 @@ var GameUI = React.createClass({
 
   componentDidMount() {
     this.renderGrid();
+    this.updateViewportSize();
     window.addEventListener('resize', this.handleWindowResize);
   },
 
@@ -218,8 +243,57 @@ var GameUI = React.createClass({
 
   setShip(data) {
     var game = new Game(Long.MAX_UNSIGNED_VALUE, Long.MAX_UNSIGNED_VALUE);
-    game.addShip(50, 10, data);
+    var shipWidth = data[0].length;
+    var shipHeight = data.length;
+    var center = this.visualCenter();
+    game.addShip(
+      center.x.subtract(Math.floor(shipWidth / 2)),
+      center.y.subtract(Math.floor(shipHeight / 2)),
+      data
+    );
     this.setState({game});
+  },
+
+  startDragging(e) {
+    if (!this.state.dragging) {
+      this.setState({
+        dragging: true,
+        draggingOrigin: {
+          x: this.state.x,
+          y: this.state.y
+        },
+        draggingFrom: {
+          x: e.clientX,
+          y: e.clientY
+        }
+      });
+      document.addEventListener('mouseup', this.stopDragging);
+      document.addEventListener('mousemove', this.dragMove);
+    }
+  },
+
+  dragMove: debounce(function(e) {
+    e.preventDefault();
+    var nx = this.state.draggingOrigin.x.add( Math.round((this.state.draggingFrom.x - e.clientX) / this.state.pixelSize) );
+    var ny = this.state.draggingOrigin.y.add( Math.round((this.state.draggingFrom.y - e.clientY) / this.state.pixelSize) );
+    if (nx.lessThan(0)) {
+      nx = Long.fromInt(0);
+    }
+    if (ny.lessThan(0)) {
+      ny = Long.fromInt(0);
+    }
+    this.setState({
+      x: nx,
+      y: ny
+    });
+  }, 10),
+
+  stopDragging(e) {
+    this.setState({
+      dragging: false
+    });
+    document.removeEventListener('mouseup', this.stopDragging);
+    document.removeEventListener('mousemove', this.dragMove);
   },
 
   render() {
@@ -238,9 +312,13 @@ var GameUI = React.createClass({
     }, this);
 
     return (
-      <div className='Game'>
-        <canvas ref='grid' className='Game-grid' />
+      <div className={classSet({'Game': true, 'Game--dragging': this.state.dragging})}>
+
+        <canvas ref='grid' className='Game-grid' onMouseDown={this.startDragging} />
+
         <div className='Game-controls' onMouseDown={this.captureMouse}>
+
+          {`${this.state.x.toString()}x${this.state.y.toString()} ${this.state.width}x${this.state.height}`}
 
           <div>
             <span>pixel size</span>
