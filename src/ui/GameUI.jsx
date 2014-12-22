@@ -8,6 +8,7 @@ var debounce = require('debounce');
 var Region = require('./../Region');
 var Game = require('./../Game');
 var geometry = require('../geometry');
+var subtractUnsignedLong = require('../subtractUnsignedLong');
 
 var Button = require('./Button.jsx');
 var Grid = require('./Grid.jsx');
@@ -35,19 +36,18 @@ var GameUI = React.createClass({
 
   getInitialState() {
     var game = new Game(Long.MAX_UNSIGNED_VALUE, Long.MAX_UNSIGNED_VALUE);
-    game.addShip(Long.fromInt(10), Long.fromInt(10), PATTERNS[0].data);
 
     return {
-      x: Long.fromInt(0),
-      y: Long.fromInt(0),
+      x: Long.MAX_UNSIGNED_VALUE.div(2).toUnsigned(),
+      y: Long.MAX_UNSIGNED_VALUE.div(2).toUnsigned(),
       width: 0,
       height: 0,
-      pixelSize: 10,
+      pixelSize: 6,
 
       timeTaken: 0,
       showRegions: true,
       game: game,
-      duration: 50,
+      duration: 250,
       useFrames: false,
       running: false,
 
@@ -117,14 +117,44 @@ var GameUI = React.createClass({
   setPixelSize(e) {
     var pixelSize = parseInt(e.target.value);
     if (!isNaN(pixelSize) && pixelSize >= 1 && pixelSize <= 40) {
-      this.setState({pixelSize}, this.updateViewportSize);
+      var center = this.visualCenter();
+      var x = center.x;
+      var y = center.y;
+
+      var w2 = Math.round(window.innerWidth  / (2 * pixelSize));
+      var h2 = Math.round(window.innerHeight / (2 * pixelSize));
+
+      if (x.lessThan(w2)) {
+        x = Long.UZERO;
+      } else if (Long.MAX_UNSIGNED_VALUE.subtract(x).lessThan(w2)) {
+        x = Long.MAX_UNSIGNED_VALUE.subtract(w2 * 2);
+      } else {
+        x = x.subtract(w2);
+      }
+
+      if (y.lessThan(h2)) {
+        y = Long.UZERO;
+      } else if (Long.MAX_UNSIGNED_VALUE.subtract(y).lessThan(h2)) {
+        y = Long.MAX_UNSIGNED_VALUE.subtract(h2 * 2);
+      } else {
+        y = y.subtract(h2);
+      }
+
+      var width = Math.ceil(window.innerWidth / pixelSize);
+      var height = Math.ceil(window.innerHeight / pixelSize);
+
+      this.setState({x, y, pixelSize, width, height});
     }
   },
 
+
+  /**
+   * @return {{x: Long, y: Long}}
+   */
   visualCenter() {
     return {
-      x: this.state.x.add(Math.floor(this.state.width / 2)),
-      y: this.state.y.add(Math.floor(this.state.height / 2))
+      x: this.state.x.add(Math.floor(this.state.width / 2)).toUnsigned(),
+      y: this.state.y.add(Math.floor(this.state.height / 2)).toUnsigned()
     };
   },
 
@@ -203,24 +233,42 @@ var GameUI = React.createClass({
         }
       });
       document.addEventListener('mouseup', this.stopDragging);
-      document.addEventListener('mousemove', this.dragMove);
+      document.addEventListener('mousemove', this.dragMove, false);
     }
   },
 
   dragMove: debounce(function (e) {
     e.preventDefault();
-    var nx = this.state.draggingOrigin.x.add(Math.round((this.state.draggingFrom.x - e.clientX) / this.state.pixelSize));
-    var ny = this.state.draggingOrigin.y.add(Math.round((this.state.draggingFrom.y - e.clientY) / this.state.pixelSize));
-    if (nx.lessThan(0)) {
-      nx = Long.fromInt(0);
+
+    var ox = this.state.draggingOrigin.x;
+    var oy = this.state.draggingOrigin.y;
+
+    var dx = Math.round((this.state.draggingFrom.x - e.clientX) / this.state.pixelSize);
+    var dy = Math.round((this.state.draggingFrom.y - e.clientY) / this.state.pixelSize);
+
+    var nx, ny;
+
+    if (dx < 0 && ox.lessThan(-dx)) {
+      nx = Long.UZERO;
+    } else if (dx > 0 && Long.MAX_UNSIGNED_VALUE.subtract(dx).lessThan(ox)) {
+      nx = Long.MAX_UNSIGNED_VALUE;
+    } else {
+      nx = ox.add(dx);
     }
-    if (ny.lessThan(0)) {
-      ny = Long.fromInt(0);
+
+    if (dy < 0 && oy.lessThan(-dy)) {
+      ny = Long.UZERO;
+    } else if (dy > 0 && Long.MAX_UNSIGNED_VALUE.subtract(dy).lessThan(oy)) {
+      ny = Long.MAX_UNSIGNED_VALUE;
+    } else {
+      ny = oy.add(dy);
     }
+
     this.setState({
       x: nx,
       y: ny
     });
+
   }, 10),
 
   stopDragging() {
@@ -259,7 +307,7 @@ var GameUI = React.createClass({
 
     return (
       <div className='Game-controls Game-controls--expanded' onMouseDown={this.captureMouse}>
-        <div>{viewport}</div>
+        <div className='Game-viewport'>{viewport}</div>
         <div className='Game-controls-row'>
           <label htmlFor='id-pixel-size'>pixel size</label>
           <input id='id-pixel-size' value={this.state.pixelSize} type='number' onChange={this.setPixelSize} />
@@ -269,7 +317,7 @@ var GameUI = React.createClass({
           <input id='id-interval' disabled={this.state.useFrames} value={this.state.duration} type='number' onChange={this.setDuration} />
         </div>
         <div className='Game-controls-row'>
-          <label htmlFor='id-use-frames'>requestAnimationFrame</label>
+          <label htmlFor='id-use-frames'>each frame</label>
           <input id='id-use-frames' checked={this.state.useFrames} type='checkbox' onChange={this.setUseFrames} />
         </div>
         <div className='Game-controls-row'>
@@ -311,8 +359,8 @@ var GameUI = React.createClass({
       if (region.rect.intersects(screenRect)) {
         areas.push(Area({
           key: areas.length,
-          x: region.rect.left.subtract(x).toInt(),
-          y: region.rect.top.subtract(y).toInt(),
+          x: subtractUnsignedLong(region.rect.left, x),
+          y: subtractUnsignedLong(region.rect.top, y),
           data: region.data,
           still: region.still,
           framed: showRegions,

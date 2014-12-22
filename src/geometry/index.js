@@ -5,7 +5,7 @@
  * @return {number}
  */
 function width(data) {
-  return data[0].length;
+  return data.length ? data[0].length : 0;
 }
 
 
@@ -320,6 +320,36 @@ function ensurePadding(data, val) {
 }
 
 
+/**
+ * finds three sequential empty rows and returns second's index
+ * @param {Array.<Array.<number>>} data
+ * @return {number}
+ */
+function findSplitRow(data) {
+  var prev = 0;
+  var current = 0;
+  var _width = width(data);
+  var _height = height(data);
+  var x, y, row;
+  for (y = 0; y < _height; y++) {
+    row = data[y];
+    current = 1;
+    for (x = 0; x < _width; x++) {
+      if (row[x]) {
+        current = 0;
+        prev = 0;
+        break;
+      }
+    }
+    if (current + prev === 3) {
+      return y - 1;
+    }
+    prev += current;
+  }
+  return -1;
+}
+
+
 module.exports = {
   make: make,
   clone: clone,
@@ -335,6 +365,7 @@ module.exports = {
   overlay: overlay,
   paddings: paddings,
   ensurePadding: ensurePadding,
+  findSplitRow: findSplitRow,
   Point: require('./Point'),
   Rect: require('./Rect'),
   Size: require('./Size')

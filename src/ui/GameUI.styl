@@ -20,7 +20,9 @@ body, input {
   }
 
   &-controls {
+    user-select none
     position fixed
+    z-index 100
     right 0
     top 0
     padding 1em
@@ -29,6 +31,11 @@ body, input {
     input {
       margin-left 4px
     }
+  }
+
+  &-viewport {
+    font-family Monaco, Consolas, "Lucida Console", monospace
+    font-size 8px
   }
 
   &-controls-row {

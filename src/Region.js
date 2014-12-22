@@ -1,5 +1,7 @@
 'use strict';
 
+var Long = require('long');
+
 var lifeStep = require('./lifeStep');
 var Rect = require('./geometry/Rect');
 var Size = require('./geometry/Size');
@@ -36,7 +38,7 @@ function Region(rect, data) {
  * @param {Region} other
  * @return {boolean}
  */
-Region.prototype.intersects = function(other) {
+Region.prototype.intersects = function (other) {
   return this.rect.intersects(other.rect);
 };
 
@@ -78,6 +80,15 @@ Region.prototype.mutate = function () {
     var expandTop = 1 - paddings.top;
     var expandBottom = 1 - paddings.bottom;
 
+    // TODO propely handle game world bounds
+    if ((expandLeft > 0 && this.rect.left.lessThan(expandLeft))
+      || (expandTop > 0 && this.rect.top.lessThan(expandTop))
+      || (expandBottom > 0 && Long.MAX_UNSIGNED_VALUE.subtract(expandBottom).lessThan(this.rect.bottom))
+      || (expandRight > 0 && Long.MAX_UNSIGNED_VALUE.subtract(expandRight).lessThan(this.rect.right))) {
+      console.warn('region went out of game world bounds');
+      return [];
+    }
+
     geometry.expandLeft(next, expandLeft);
     geometry.expandRight(next, expandRight);
     geometry.expandTop(next, expandTop);
@@ -92,8 +103,55 @@ Region.prototype.mutate = function () {
 
     // FIXME support region splitting
     // TODO add periodic checks
-    return [new Region(rect, next)];
+    var region = new Region(rect, next);
+    return region.split();
   }
+
+};
+
+
+Region.prototype.shrink = function () {
+  var paddings = geometry.paddings(this.data);
+  var expandLeft = 1 - paddings.left;
+  var expandRight = 1 - paddings.right;
+  var expandTop = 1 - paddings.top;
+  var expandBottom = 1 - paddings.bottom;
+
+  geometry.expandLeft(this.data, expandLeft);
+  geometry.expandRight(this.data, expandRight);
+  geometry.expandTop(this.data, expandTop);
+  geometry.expandBottom(this.data, expandBottom);
+
+  var origin = this.rect.origin.translate(-expandLeft, -expandTop);
+
+  var width = this.rect.size.width + expandLeft + expandRight;
+  var height = this.rect.size.height + expandTop + expandBottom;
+
+  this.rect = new Rect(origin, new Size(width, height));
+};
+
+
+/**
+ * @return {Region[]}
+ */
+Region.prototype.split = function () {
+  var splitRow = geometry.findSplitRow(this.data);
+  if (splitRow != -1) {
+    var originA = new Point(this.rect.left, this.rect.top);
+    var originB = new Point(this.rect.left, this.rect.top.add(splitRow + 1));
+    var sizeA = new Size(this.rect.width, splitRow);
+    var sizeB = new Size(this.rect.width, this.rect.height - splitRow - 1);
+    var dataA = geometry.make(sizeA.width, sizeA.height);
+    var dataB = geometry.make(sizeB.width, sizeB.height);
+    geometry.overlay(dataA, this.data);
+    geometry.overlay(dataB, this.data, 0, -1 - splitRow);
+    var regionA = new Region(new Rect(originA, sizeA), dataA);
+    var regionB = new Region(new Rect(originB, sizeB), dataB);
+    regionA.shrink();
+    regionB.shrink();
+    return [regionA].concat(regionB.split());
+  }
+  return [this];
 };
 
 

@@ -7,6 +7,7 @@ var Size = require('./geometry/Size');
 var Rect = require('./geometry/Rect');
 var geometry = require('./geometry');
 var Region = require('./Region');
+var subtractUnsignedLong = require('./subtractUnsignedLong');
 
 
 /**
@@ -48,19 +49,19 @@ function combineRegions(regionA, regionB) {
 
   var origin = new Point(left, top);
 
-  var width = right.subtract(left).toInt();
-  var height = bottom.subtract(top).toInt();
+  var width = subtractUnsignedLong(right, left);
+  var height = subtractUnsignedLong(bottom, top);
 
   var rect = new Rect(origin, new Size(width, height));
 
   var data = geometry.make(width, height);
 
-  var dx = left.subtract(r1.left).toInt();
-  var dy = top.subtract(r1.top).toInt();
+  var dx = subtractUnsignedLong(left, r1.left);
+  var dy = subtractUnsignedLong(top, r1.top);
   geometry.overlay(data, regionA.data, -dx, -dy);
 
-  dx = left.subtract(r2.left).toInt();
-  dy = top.subtract(r2.top).toInt();
+  dx = subtractUnsignedLong(left, r2.left);
+  dy = subtractUnsignedLong(top, r2.top);
   geometry.overlay(data, regionB.data, -dx, -dy);
 
   return new Region(rect, data);
@@ -107,6 +108,7 @@ function Game(width, height) {
 Game.prototype.addShip = function (originX, originY, data) {
   var shipRegion = Region.fromPattern(new Point(originX, originY), data);
   this.regions.push(shipRegion);
+  this.merge();
 };
 
 
@@ -121,8 +123,7 @@ Game.prototype.mutate = function () {
     return acc.concat(reg.mutate());
   }, []);
   this.generation += 1;
-}
-;
+};
 
 
 module.exports = Game;
