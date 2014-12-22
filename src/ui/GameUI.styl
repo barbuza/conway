@@ -3,40 +3,12 @@ body {
   font-family 'Audiowide', cursive
 }
 
-grid-color = #aaa
-
 .Game {
   min-width 100vw
   min-height 100vh
 
   &--dragging {
     cursor move
-  }
-
-  &-button {
-    font-size 12px
-    padding 4px 6px
-    background linear-gradient(to bottom, #eee, #ddd)
-
-    border-radius 2px
-    cursor pointer
-
-    &.Game-button--disabled {
-      color #888
-      cursor default
-
-      &:hover {
-        background linear-gradient(to bottom, #eee, #ddd)
-      }
-    }
-
-    &:hover {
-      background #eee
-    }
-
-    & + & {
-      margin-left 10px
-    }
   }
 
   &-buttons {
@@ -71,24 +43,4 @@ grid-color = #aaa
       opacity 0.6
     }
   }
-}
-
-.Region {
-  pointer-events none
-  position fixed
-
-  &--withFrame {
-    background rgba(red, 0.08)
-    box-shadow inset 0px 0px 1px rgba(red, 0.4)
-
-    &.Region--still {
-      background rgba(mediumseagreen, 0.1)
-      box-shadow inset 0px 0px 1px rgba(mediumseagreen, 0.5)
-    }
-  }
-}
-
-.Cell {
-  position absolute
-  background #000
 }

@@ -334,5 +334,8 @@ module.exports = {
   expandBottom: expandBottom,
   overlay: overlay,
   paddings: paddings,
-  ensurePadding: ensurePadding
+  ensurePadding: ensurePadding,
+  Point: require('./Point'),
+  Rect: require('./Rect'),
+  Size: require('./Size')
 };

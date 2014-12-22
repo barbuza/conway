@@ -29,12 +29,4 @@ Point.prototype.translate = function (dx, dy) {
 };
 
 
-/**
- * @return {string}
- */
-Point.prototype.toString = function() {
-  return `[Point ${this.x}x${this.y}]`;
-};
-
-
 module.exports = Point;

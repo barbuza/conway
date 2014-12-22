@@ -88,14 +88,6 @@ Rect.prototype.intersects = function (other) {
 
 
 /**
- * @return {string}
- */
-Rect.prototype.toString = function () {
-  return `[Rect ${this.left}x${this.top} ${this.width}:${this.height}]`;
-};
-
-
-/**
  * @param {number} x
  * @param {number} y
  * @param {number} width

@@ -89,7 +89,6 @@ function Game(width, height) {
   /**
    * @member {Region[]}
    */
-
   this.regions = [];
 
   /**
