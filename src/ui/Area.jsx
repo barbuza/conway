@@ -1,5 +1,6 @@
 var React = require('react');
 var classSet = require('react/lib/cx');
+var PureRender = require('react/lib/ReactComponentWithPureRenderMixin');
 
 var geometry = require('../geometry');
 
@@ -11,6 +12,8 @@ require('./Area.styl');
  */
 var Area = React.createClass({
 
+  mixins: [PureRender],
+
   propTypes: {
     x: React.PropTypes.number.isRequired,
     y: React.PropTypes.number.isRequired,
@@ -20,53 +23,63 @@ var Area = React.createClass({
     pixelSize: React.PropTypes.number.isRequired
   },
 
-  draw() {
+  /**
+   * @param {boolean} [moveOnly=false]
+   */
+  draw(moveOnly) {
 
     /**
      * @type {HTMLCanvasElement}
      */
     var canvas = this.getDOMNode();
-    var context = canvas.getContext('2d');
     var pixelRatio = window['devicePixelRatio'] || 1;
-    context.scale(pixelRatio, pixelRatio);
-    context.clearRect(0, 0, canvas.width, canvas.height);
 
     var px = this.props.pixelSize * pixelRatio;
-    var data = this.props.data;
 
-    var width = geometry.width(data);
-    var height = geometry.height(data);
-
-    canvas.width = width * px;
-    canvas.height = height * px;
-    canvas.style.width = width * this.props.pixelSize + 'px';
-    canvas.style.height = height * this.props.pixelSize + 'px';
     canvas.style.transform = `translate3d(${this.props.x * this.props.pixelSize}px, ${this.props.y * this.props.pixelSize}px, -1px)`;
 
-    var x, y, row;
+    if (!moveOnly) {
+      var context = canvas.getContext('2d');
 
-    for (y = 0; y < height; y++) {
-      row = data[y];
-      for (x = 0; x < width; x++) {
-        if (row[x]) {
-          if (px > 6) {
-            context.beginPath();
-            context.arc(x * px + px /2, y * px + px / 2, px / 2, 0, 2 * Math.PI, false);
-            context.fill();
-          } else {
-            context.rect(x * px, y * px, px, px);
+      context.clearRect(0, 0, canvas.width, canvas.height);
+
+      var data = this.props.data;
+
+      var width = geometry.width(data);
+      var height = geometry.height(data);
+
+      canvas.width = width * px;
+      canvas.height = height * px;
+      canvas.style.width = width * this.props.pixelSize + 'px';
+      canvas.style.height = height * this.props.pixelSize + 'px';
+
+      var x, y, row;
+
+      context.scale(pixelRatio, pixelRatio);
+
+      for (y = 0; y < height; y++) {
+        row = data[y];
+        for (x = 0; x < width; x++) {
+          if (row[x]) {
+            if (px > 6) {
+              context.beginPath();
+              context.arc(x * px + px / 2, y * px + px / 2, px / 2, 0, 2 * Math.PI, false);
+              context.fill();
+            } else {
+              context.rect(x * px, y * px, px, px);
+            }
+
           }
-
         }
       }
-    }
 
-    context.fillStyle = '#000';
-    context.fill();
+      context.fillStyle = '#000';
+      context.fill();
+    }
   },
 
-  componentDidUpdate() {
-    this.draw();
+  componentDidUpdate(prevProps) {
+    this.draw(prevProps.data === this.props.data && prevProps.pixelSize === this.props.pixelSize);
   },
 
   componentDidMount() {

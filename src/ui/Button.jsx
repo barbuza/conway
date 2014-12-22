@@ -1,10 +1,13 @@
 var React = require('react');
 var classSet = require('react/lib/cx');
+var PureRender = require('react/lib/ReactComponentWithPureRenderMixin');
 
 require('./Button.styl');
 
 
 var Button = React.createClass({
+
+  mixins: [PureRender],
 
   propTypes: {
     disabled: React.PropTypes.bool,
@@ -17,6 +20,9 @@ var Button = React.createClass({
     }
   },
 
+  /**
+   * @return {ReactElement}
+   */
   render() {
     var className = classSet({
       'Button': true,

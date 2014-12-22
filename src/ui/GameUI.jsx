@@ -1,5 +1,4 @@
 var React = require('react');
-var PureRender = require('react/lib/ReactComponentWithPureRenderMixin');
 var classSet = require('react/lib/cx');
 
 var Long = require('long');
@@ -27,9 +26,8 @@ var PATTERNS = [
   require('../../patterns/canadagoose.cells'),
   require('../../patterns/enterprise.cells'),
   require('../../patterns/seal.cells'),
-  require('../../patterns/gosperglidergun.cells'),
   require('../../patterns/glider.cells'),
-  require('../../patterns/gliderloop.cells')
+  require('../../patterns/77p6h1v1.cells')
 ];
 
 
@@ -50,11 +48,14 @@ var GameUI = React.createClass({
       showRegions: true,
       game: game,
       duration: 50,
+      useFrames: false,
       running: false,
 
       dragging: false,
       draggingFrom: null,
-      draggingOrigin: null
+      draggingOrigin: null,
+
+      showMenu: true
     }
   },
 
@@ -70,8 +71,11 @@ var GameUI = React.createClass({
 
     this.forceUpdate(function () {
       if (this.state.running) {
-        //this._runningTimer = setTimeout(this.mutate, this.state.duration);
-        requestAnimationFrame(this.mutate);
+        if (this.state.useFrames) {
+          requestAnimationFrame(this.mutate);
+        } else {
+          this._runningTimer = setTimeout(this.mutate, this.state.duration);
+        }
       }
     }.bind(this));
   },
@@ -100,10 +104,16 @@ var GameUI = React.createClass({
     })
   },
 
+  /**
+   * @param {SyntheticMouseEvent} e
+   */
   captureMouse(e) {
     e.stopPropagation();
   },
 
+  /**
+   * @param {SyntheticInputEvent} e
+   */
   setPixelSize(e) {
     var pixelSize = parseInt(e.target.value);
     if (!isNaN(pixelSize) && pixelSize >= 1 && pixelSize <= 40) {
@@ -118,6 +128,9 @@ var GameUI = React.createClass({
     };
   },
 
+  /**
+   * @param {SyntheticInputEvent} e
+   */
   setDuration(e) {
     var duration = parseInt(e.target.value);
     if (!isNaN(duration) && duration >= 30 && duration <= 10000) {
@@ -125,9 +138,20 @@ var GameUI = React.createClass({
     }
   },
 
+  /**
+   * @param {SyntheticInputEvent} e
+   */
   setShowRegions(e) {
     var showRegions = e.target.checked;
     this.setState({showRegions});
+  },
+
+  /**
+   * @param {SyntheticInputEvent} e
+   */
+  setUseFrames(e) {
+    var useFrames = e.target.checked;
+    this.setState({useFrames});
   },
 
   handleWindowResize: debounce(function () {
@@ -150,6 +174,9 @@ var GameUI = React.createClass({
     window.removeEventListener('resize', this.handleWindowResize);
   },
 
+  /**
+   * @param {Array.<Array.<number>>} data
+   */
   addShip(data) {
     var shipWidth = data[0].length;
     var shipHeight = data.length;
@@ -204,6 +231,73 @@ var GameUI = React.createClass({
     document.removeEventListener('mousemove', this.dragMove);
   },
 
+
+  /**
+   * @return {ReactElement}
+   */
+  renderMenuCollapsed() {
+    return (
+      <div className='Game-controls Game-controls--collapsed' onMouseDown={this.captureMouse}>
+        <div className='Game-controls-toggle' onClick={this.toggleMenu}>expand</div>
+      </div>
+    );
+  },
+
+  /**
+   * @return {ReactElement}
+   */
+  renderMenuExpanded() {
+    var shipsMenu = PATTERNS.map(function (ship, idx) {
+      return (
+        <div key={idx} className='Game-shipButton' onClick={this.addShip.bind(this, ship.data)}>
+          {ship.name}
+        </div>
+      );
+    }, this);
+
+    var viewport = `${this.state.x.toString()}x${this.state.y.toString()} ${this.state.width}x${this.state.height}`;
+
+    return (
+      <div className='Game-controls Game-controls--expanded' onMouseDown={this.captureMouse}>
+        <div>{viewport}</div>
+        <div className='Game-controls-row'>
+          <label htmlFor='id-pixel-size'>pixel size</label>
+          <input id='id-pixel-size' value={this.state.pixelSize} type='number' onChange={this.setPixelSize} />
+        </div>
+        <div className='Game-controls-row'>
+          <label htmlFor='id-interval'>interval</label>
+          <input id='id-interval' disabled={this.state.useFrames} value={this.state.duration} type='number' onChange={this.setDuration} />
+        </div>
+        <div className='Game-controls-row'>
+          <label htmlFor='id-use-frames'>requestAnimationFrame</label>
+          <input id='id-use-frames' checked={this.state.useFrames} type='checkbox' onChange={this.setUseFrames} />
+        </div>
+        <div className='Game-controls-row'>
+          <label htmlFor='id-show-regions'>show regions</label>
+          <input id='id-show-regions' type='checkbox' onChange={this.setShowRegions} checked={this.state.showRegions} />
+        </div>
+        <div className='Game-buttons'>
+          <Button disabled={this.state.running} onClick={this.mutate}>mutate</Button>
+          <Button disabled={this.state.running} onClick={this.start}>start</Button>
+          <Button disabled={!this.state.running} onClick={this.stop}>stop</Button>
+          <Button onClick={this.reset}>reset</Button>
+        </div>
+        <div>time taken {Numeral(this.state.timeTaken).format('0.00')}ms</div>
+        <div>generation {this.state.game.generation}</div>
+        <div className='Game-shipsMenu'>
+            {shipsMenu}
+        </div>
+        <div className='Game-controls-toggle' onClick={this.toggleMenu}>collapse</div>
+      </div>
+    );
+  },
+
+  toggleMenu() {
+    this.setState({
+      showMenu: !this.state.showMenu
+    });
+  },
+
   render() {
 
     var {game, x, y, width, height, pixelSize, showRegions} = this.state;
@@ -227,19 +321,6 @@ var GameUI = React.createClass({
       }
     });
 
-    //var regions = this.state.game.regions.map((r, idx) =>
-    //    <RegionUI frame={this.state.showRegions} region={r} key={idx}
-    //              x={this.state.x} y={this.state.y}
-    //              pixelSize={this.state.pixelSize} />);
-
-    var shipsMenu = PATTERNS.map(function (ship, idx) {
-      return (
-        <div key={idx} className='Game-shipButton' onClick={this.addShip.bind(this, ship.data)}>
-          {ship.name}
-        </div>
-      );
-    }, this);
-
     var className = classSet({
       'Game': true,
       'Game--dragging': this.state.dragging
@@ -247,44 +328,8 @@ var GameUI = React.createClass({
 
     return (
       <div className={className} onMouseDown={this.startDragging}>
-
         <Grid pixelSize={this.state.pixelSize} width={this.state.width} height={this.state.height} />
-
-        <div className='Game-controls' onMouseDown={this.captureMouse}>
-
-          {`${this.state.x.toString()}x${this.state.y.toString()} ${this.state.width}x${this.state.height}`}
-
-          <div>
-            <span>pixel size</span>
-            <input value={this.state.pixelSize} type='number' onChange={this.setPixelSize} />
-          </div>
-
-          <div>
-            <span>interval</span>
-            <input value={this.state.duration} type='number' onChange={this.setDuration} />
-          </div>
-
-          <div className='Game-buttons'>
-            <Button disabled={this.state.running} onClick={this.mutate}>mutate</Button>
-            <Button disabled={this.state.running} onClick={this.start}>start</Button>
-            <Button disabled={!this.state.running} onClick={this.stop}>stop</Button>
-            <Button onClick={this.reset}>reset</Button>
-          </div>
-
-          <div>
-            <label htmlFor='id-show-regions'>show regions</label>
-            <input type='checkbox' onChange={this.setShowRegions} checked={this.state.showRegions} />
-          </div>
-
-          <div>time taken {Numeral(this.state.timeTaken).format('0.00')}ms</div>
-          <div>generation {this.state.game.generation}</div>
-
-          <div className='Game-shipsMenu'>
-            {shipsMenu}
-          </div>
-
-        </div>
-
+        {this.state.showMenu ? this.renderMenuExpanded() : this.renderMenuCollapsed()}
         {areas}
       </div>
     );

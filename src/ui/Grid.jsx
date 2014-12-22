@@ -53,6 +53,9 @@ var Grid = React.createClass({
     this.renderGrid();
   },
 
+  /**
+   * @return {ReactElement}
+   */
   render() {
     return <canvas className='Grid' />;
   }
