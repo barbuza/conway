@@ -1,10 +1,18 @@
+'use strict';
+
 var Long = require('long');
 
 var Point = require('./Point');
 var Size = require('./Size');
 
 
-function _intersects(r1:Rect, r2:Rect) : Boolean {
+/**
+ * @param {Rect} r1
+ * @param {Rect} r2
+ * @return {boolean}
+ * @private
+ */
+function intersects(r1, r2) {
   return !(
   r2.left.greaterThan(r1.left)
   || r2.right.lessThan(r1.left)
@@ -14,33 +22,89 @@ function _intersects(r1:Rect, r2:Rect) : Boolean {
 }
 
 
-class Rect {
+/**
+ * rectangle with long coordinates and native
+ *
+ * @param {Point} origin
+ * @param {Size} size
+ * @constructor
+ */
+function Rect(origin, size) {
 
-  constructor(origin:Point, size:Size) {
-    this.origin = origin;
-    this.size = size;
-    this.left = origin.x;
-    this.top = origin.y;
-    this.right = origin.x.add(size.width);
-    this.bottom = origin.y.add(size.height);
-    this.width = size.width;
-    this.height = size.height;
-    this.edge = new Point(this.right, this.bottom);
-  }
+  /**
+   * @type {Point}
+   */
+  this.origin = origin;
 
-  intersects(other) {
-    return _intersects(this, other) || _intersects(other, this);
-  }
+  /**
+   * @type {Size}
+   */
+  this.size = size;
 
-  toString() {
-    return `[Rect ${this.left}x${this.top} ${this.width}:${this.height}]`;
-  }
+  /**
+   * @member {Long}
+   */
+  this.left = origin.x;
 
-  static make(x, y, w, h) {
-    return new Rect(new Point(Long.fromInt(x), Long.fromInt(y)), new Size(w, h));
-  }
+  /**
+   * @member {Long}
+   */
+  this.top = origin.y;
 
+  /**
+   * @member {Long}
+   */
+  this.right = origin.x.add(size.width);
+
+  /**
+   * @member {Long}
+   */
+  this.bottom = origin.y.add(size.height);
+
+  /**
+   * @member {number}
+   */
+  this.width = size.width;
+
+  /**
+   * @member {number}
+   */
+  this.height = size.height;
+
+  /**
+   * @member {Point}
+   */
+  this.edge = new Point(this.right, this.bottom);
 }
+
+
+/**
+ * @param {Rect} other
+ * @return {boolean}
+ */
+Rect.prototype.intersects = function (other) {
+  return intersects(this, other) || intersects(other, this);
+};
+
+
+/**
+ * @return {string}
+ */
+Rect.prototype.toString = function () {
+  return `[Rect ${this.left}x${this.top} ${this.width}:${this.height}]`;
+};
+
+
+/**
+ * @param {number} x
+ * @param {number} y
+ * @param {number} width
+ * @param {number} height
+ * @return {Rect}
+ */
+Rect.make = function (x, y, width, height) {
+  return new Rect(new Point(Long.fromInt(x, true), Long.fromInt(y, true)), new Size(width, height));
+};
 
 
 module.exports = Rect;

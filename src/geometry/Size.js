@@ -1,10 +1,13 @@
-class Size {
+'use strict';
 
-  constructor(width:Number, height:Number) {
-    this.width = width;
-    this.height = height;
-  }
-
+/**
+ * @param {number} width
+ * @param {number} height
+ * @constructor
+ */
+function Size(width, height) {
+  this.width = width;
+  this.height = height;
 }
 
 

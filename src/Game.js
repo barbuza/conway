@@ -1,116 +1,129 @@
+'use strict';
+
 var Long = require('long');
 
 var Point = require('./geometry/Point');
 var Size = require('./geometry/Size');
 var Rect = require('./geometry/Rect');
+var geometry = require('./geometry');
 var Region = require('./Region');
 
 
-function mergeRegions(regions:Array) : Array {
+/**
+ * @param {Region[]} regions
+ * @return {Region[]}
+ */
+function mergeRegions(regions) {
+  var regionA, regionB;
   regions = regions.slice(0);
   for (var ri = 0; ri < regions.length; ri++) {
     for (var rs = ri + 1; rs < regions.length; rs++) {
-      if (regions[ri].rect.intersects(regions[rs].rect)) {
-        var r1 = regions[ri];
-        var r2 = regions[rs];
-        regions.splice(regions.indexOf(r1), 1);
-        regions.splice(regions.indexOf(r2), 1);
-        regions.unshift(_mergeRegions(r1, r2));
+      regionA = regions[ri];
+      regionB = regions[rs];
+      if (regionA.intersects(regionB)) {
+        regions.splice(regions.indexOf(regionA), 1);
+        regions.splice(regions.indexOf(regionB), 1);
+        regions.push(combineRegions(regionA, regionB));
         return mergeRegions(regions);
       }
     }
   }
-  return regions.slice(0);
+  return regions;
 }
 
 
-function _mergeRegions(r1:Region, r2:Region) : Region {
-  var o1 = r1.rect.origin;
-  var o2 = r2.rect.origin;
-  var x = o1.x.lessThan(o2.x) ? o1.x : o2.x;
-  var y = o1.y.lessThan(o2.y) ? o1.y : o2.y;
-  var origin = new Point(x, y);
+/**
+ * @param {Region} regionA
+ * @param {Region} regionB
+ * @return {Region}
+ */
+function combineRegions(regionA, regionB) {
+  var r1 = regionA.rect;
+  var r2 = regionB.rect;
 
-  var e1 = r1.rect.edge;
-  var e2 = r2.rect.edge;
-  x = e1.x.greaterThan(e2.x) ? e1.x : e2.x;
-  y = e1.y.greaterThan(e2.y) ? e1.y : e2.y;
-  var edge = new Point(x, y);
+  var top = r1.top.lessThan(r2.top) ? r1.top : r2.top;
+  var bottom = r1.bottom.lessThan(r2.bottom) ? r2.bottom : r1.bottom;
+  var left = r1.left.lessThan(r2.left) ? r1.left : r2.left;
+  var right = r1.right.lessThan(r2.right) ? r2.right : r1.right;
 
-  var width = edge.x.subtract(origin.x).toInt();
-  var height = edge.y.subtract(origin.y).toInt();
+  var origin = new Point(left, top);
+
+  var width = right.subtract(left).toInt();
+  var height = bottom.subtract(top).toInt();
 
   var rect = new Rect(origin, new Size(width, height));
 
-  var points = [];
+  var data = geometry.make(width, height);
 
-  var dx = origin.x.subtract(o1.x).toInt();
-  var dy = origin.y.subtract(o1.y).toInt();
+  var dx = left.subtract(r1.left).toInt();
+  var dy = top.subtract(r1.top).toInt();
+  geometry.overlay(data, regionA.data, -dx, -dy);
 
-  r1.points.forEach(function(p) {
-    points.push(new Point(p.x - dx, p.y - dy));
-  });
+  dx = left.subtract(r2.left).toInt();
+  dy = top.subtract(r2.top).toInt();
+  geometry.overlay(data, regionB.data, -dx, -dy);
 
-  dx = origin.x.subtract(o2.x).toInt();
-  dy = origin.y.subtract(o2.y).toInt();
-  r2.points.forEach(function(p) {
-    points.push(new Point(p.x - dx, p.y - dy));
-  });
-
-  return new Region(rect, points);
+  return new Region(rect, data);
 }
 
 
-class Game {
+/**
+ * game field with long size
+ *
+ * @param {Long} width
+ * @param {Long} height
+ * @constructor
+ */
+function Game(width, height) {
 
-  constructor(width:Long, height:Long) {
-    this.width = width;
-    this.height = height;
-    this.regions = [];
-    this.generation = 1;
-  }
+  /**
+   * @member {Long}
+   */
+  this.width = width;
 
-  addPoint(point:Point) : void {
-    var origin = point.translate(-1, -1);
-    var size = new Size(3, 3);
-    var rect = new Rect(origin, size);
-    var region = new Region(rect, [new Point(1, 1)]);
-    this.regions.push(region);
-  }
+  /**
+   * @member {Long}
+   */
+  this.height = height;
 
-  addCell(x:Number, y:Number) : void {
-    this.addPoint(new Point( Long.fromInt(x), Long.fromInt(y) ));
-  }
+  /**
+   * @member {Region[]}
+   */
 
-  addShip(originX:Long, originY:Long, data:Object) : void {
-    var origin = (new Point(originX, originY)).translate(-1, -1);
-    var size = new Size(data[0].length + 2, data.length + 2);
-    var rect = new Rect(origin, size);
-    var region = new Region(rect, []);
+  this.regions = [];
 
-    data.forEach(function(row, y) {
-      row.forEach(function(cell, x) {
-        if (cell) {
-          region.points.push(new Point(x + 1, y + 1));
-        }
-      }, this);
-    }, this);
-
-    this.regions.push(region);
-  }
-
-  merge() {
-    this.regions = mergeRegions(this.regions);
-  }
-
-  mutate() {
-    this.regions = this.regions.reduce(function(acc, reg) {
-      return acc.concat(reg.mutate());
-    }, []);
-    this.generation += 1;
-  }
+  /**
+   * @member {number}
+   */
+  this.generation = 1;
 
 }
+
+
+/**
+ * @param {Long} originX
+ * @param {Long} originY
+ * @param {Array.<Array.<number>>} data
+ */
+Game.prototype.addShip = function (originX, originY, data) {
+  var shipRegion = Region.fromPattern(new Point(originX, originY), data);
+  this.regions.push(shipRegion);
+};
+
+
+Game.prototype.merge = function () {
+  this.regions = mergeRegions(this.regions);
+};
+
+
+Game.prototype.mutate = function () {
+  this.merge();
+  this.regions = this.regions.reduce(function (acc, reg) {
+    return acc.concat(reg.mutate());
+  }, []);
+  this.generation += 1;
+}
+;
 
 
 module.exports = Game;

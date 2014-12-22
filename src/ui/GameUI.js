@@ -1,5 +1,7 @@
 var React = require('react');
+var PureRender = require('react/lib/ReactComponentWithPureRenderMixin');
 var classSet = require('react/lib/cx');
+
 var Long = require('long');
 var Numeral = require('numeral');
 var debounce = require('debounce');
@@ -7,6 +9,7 @@ var debounce = require('debounce');
 var Region = require('./../Region');
 var Game = require('./../Game');
 var Rect = require('../geometry/Rect');
+var geometry = require('../geometry');
 
 var Button = require('./Button');
 
@@ -22,11 +25,16 @@ var PATTERNS = [
   require('../../patterns/crab.cells'),
   require('../../patterns/canadagoose.cells'),
   require('../../patterns/enterprise.cells'),
-  require('../../patterns/seal.cells')
+  require('../../patterns/seal.cells'),
+  require('../../patterns/gosperglidergun.cells'),
+  require('../../patterns/glider.cells'),
+  require('../../patterns/gliderloop.cells')
 ];
 
 
 var Cell = React.createClass({
+
+  mixins: [PureRender],
 
   propTypes: {
     pixelSize: React.PropTypes.number.isRequired,
@@ -78,7 +86,16 @@ var RegionUI = React.createClass({
 
     if (viewport.intersects(regionRect)) {
 
-      var points = r.points.map((point, idx) => <Cell key={idx} pixelSize={px} x={point.x} y={point.y} />);
+      var points = [];
+      var _width = geometry.width(r.data);
+      var _height = geometry.height(r.data);
+      for (var x = 0; x < _width; x++) {
+        for (var y = 0; y < _height; y++) {
+          if (r.data[y][x]) {
+            points.push(<Cell key={`${x}x${y}`} pixelSize={px} x={x} y={y} />)
+          }
+        }
+      }
 
       var className = classSet({
         'Region': true,
@@ -110,7 +127,7 @@ var GameUI = React.createClass({
 
   getInitialState() {
     var game = new Game(Long.MAX_UNSIGNED_VALUE, Long.MAX_UNSIGNED_VALUE);
-    game.addShip(Long.fromInt(10), Long.fromInt(10), PATTERNS[1].data);
+    game.addShip(Long.fromInt(10), Long.fromInt(10), PATTERNS[0].data);
 
     return {
       x: Long.fromInt(0),
@@ -137,14 +154,13 @@ var GameUI = React.createClass({
     }
 
     var start = performance.now();
-    this.state.game.merge();
     this.state.game.mutate();
     var timeTaken = performance.now() - start;
     this.setState({timeTaken});
 
     this.forceUpdate(function() {
       if (this.state.running) {
-        setTimeout(this.mutate, this.state.duration);
+        this._runningTimer = setTimeout(this.mutate, this.state.duration);
       }
     }.bind(this));
   },
@@ -160,6 +176,17 @@ var GameUI = React.createClass({
     this.setState({
       running: false
     });
+    if (this._runningTimer) {
+      clearTimeout(this._runningTimer);
+      this._runningTimer = null;
+    }
+  },
+
+  reset() {
+    this.stop();
+    this.setState({
+      game: new Game(Long.MAX_UNSIGNED_VALUE, Long.MAX_UNSIGNED_VALUE)
+    })
   },
 
   captureMouse(e) {
@@ -241,17 +268,16 @@ var GameUI = React.createClass({
     window.removeEventListener('resize', this.handleWindowResize);
   },
 
-  setShip(data) {
-    var game = new Game(Long.MAX_UNSIGNED_VALUE, Long.MAX_UNSIGNED_VALUE);
+  addShip(data) {
     var shipWidth = data[0].length;
     var shipHeight = data.length;
     var center = this.visualCenter();
-    game.addShip(
+    this.state.game.addShip(
       center.x.subtract(Math.floor(shipWidth / 2)),
       center.y.subtract(Math.floor(shipHeight / 2)),
       data
     );
-    this.setState({game});
+    this.forceUpdate();
   },
 
   startDragging(e) {
@@ -305,8 +331,8 @@ var GameUI = React.createClass({
 
     var shipsMenu = PATTERNS.map(function(ship, idx) {
       return (
-        <div key={idx} className='Game-shipButton' onClick={this.setShip.bind(this, ship.data)}>
-        {ship.name}
+        <div key={idx} className='Game-shipButton' onClick={this.addShip.bind(this, ship.data)}>
+          {ship.name}
         </div>
       );
     }, this);
@@ -334,6 +360,7 @@ var GameUI = React.createClass({
             <Button disabled={this.state.running} onClick={this.mutate}>mutate</Button>
             <Button disabled={this.state.running} onClick={this.start}>start</Button>
             <Button disabled={!this.state.running} onClick={this.stop}>stop</Button>
+            <Button onClick={this.reset}>reset</Button>
           </div>
 
           <div>
