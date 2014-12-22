@@ -27,9 +27,11 @@ var Area = React.createClass({
      */
     var canvas = this.getDOMNode();
     var context = canvas.getContext('2d');
+    var pixelRatio = window['devicePixelRatio'] || 1;
+    context.scale(pixelRatio, pixelRatio);
     context.clearRect(0, 0, canvas.width, canvas.height);
 
-    var px = this.props.pixelSize;
+    var px = this.props.pixelSize * pixelRatio;
     var data = this.props.data;
 
     var width = geometry.width(data);
@@ -37,6 +39,9 @@ var Area = React.createClass({
 
     canvas.width = width * px;
     canvas.height = height * px;
+    canvas.style.width = width * this.props.pixelSize + 'px';
+    canvas.style.height = height * this.props.pixelSize + 'px';
+    canvas.style.transform = `translate3d(${this.props.x * this.props.pixelSize}px, ${this.props.y * this.props.pixelSize}px, -1px)`;
 
     var x, y, row;
 
@@ -72,16 +77,12 @@ var Area = React.createClass({
    * @return {ReactElement}
    */
   render() {
-    var {x, y, still, framed, pixelSize} = this.props;
     var className = classSet({
       'Area': true,
-      'Area--withFrame': framed,
-      'Area--still': still
+      'Area--withFrame': this.props.framed,
+      'Area--still': this.props.still
     });
-    var style = {
-      transform: `translate3d(${x * pixelSize}px, ${y * pixelSize}px, -1px)`
-    };
-    return <canvas className={className} style={style} />;
+    return <canvas className={className} />;
   }
 
 });
