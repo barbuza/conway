@@ -321,28 +321,54 @@ function ensurePadding(data, val) {
 
 
 /**
- * finds three sequential empty rows and returns second's index
+ * finds five sequential empty rows and returns second's index
  * @param {Array.<Array.<number>>} data
  * @return {number}
  */
 function findSplitRow(data) {
-  var prev = 0;
-  var current = 0;
+  var acc = 0;
   var _width = width(data);
   var _height = height(data);
   var x, y, row;
   for (y = 0; y < _height; y++) {
     row = data[y];
-    current = 1;
+    acc += 1;
     for (x = 0; x < _width; x++) {
       if (row[x]) {
+        acc = 0;
+        break;
+      }
+    }
+    if (acc === 5) {
+      return y - 2;
+    }
+  }
+  return -1;
+}
+
+
+/**
+ * finds five sequential empty columns and returns second's index
+ * @param {Array.<Array.<number>>} data
+ * @return {number}
+ */
+function findSplitCol(data) {
+  var prev = 0;
+  var current = 0;
+  var _width = width(data);
+  var _height = height(data);
+  var x, y;
+  for (x = 0; x < _width; x++) {
+    current = 1;
+    for (y = 0; y < _height; y++) {
+      if (data[y][x]) {
         current = 0;
         prev = 0;
         break;
       }
     }
-    if (current + prev === 3) {
-      return y - 1;
+    if (current + prev === 5) {
+      return x - 2;
     }
     prev += current;
   }
@@ -366,6 +392,7 @@ module.exports = {
   paddings: paddings,
   ensurePadding: ensurePadding,
   findSplitRow: findSplitRow,
+  findSplitCol: findSplitCol,
   Point: require('./Point'),
   Rect: require('./Rect'),
   Size: require('./Size')

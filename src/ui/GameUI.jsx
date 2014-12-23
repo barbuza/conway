@@ -18,6 +18,7 @@ require('./GameUI.styl');
 
 
 var PATTERNS = [
+  require('../../patterns/4gliders.cells'),
   require('../../patterns/pulsar.cells'),
   require('../../patterns/p54shuttle.cells'),
   require('../../patterns/p42glidershuttle.cells'),
@@ -36,18 +37,19 @@ var GameUI = React.createClass({
 
   getInitialState() {
     var game = new Game(Long.MAX_UNSIGNED_VALUE, Long.MAX_UNSIGNED_VALUE);
+    var px = 7;
 
     return {
       x: Long.MAX_UNSIGNED_VALUE.div(2).toUnsigned(),
       y: Long.MAX_UNSIGNED_VALUE.div(2).toUnsigned(),
-      width: 0,
-      height: 0,
-      pixelSize: 6,
+      width: Math.ceil(window.innerWidth / px),
+      height: Math.ceil(window.innerHeight / px),
+      pixelSize: px,
 
       timeTaken: 0,
-      showRegions: true,
+      showRegions: false,
       game: game,
-      duration: 250,
+      duration: 200,
       useFrames: false,
       running: false,
 
@@ -57,6 +59,10 @@ var GameUI = React.createClass({
 
       showMenu: true
     }
+  },
+
+  componentWillMount() {
+    this.addShip(require('../../patterns/4gliders.cells').data);
   },
 
   mutate() {
@@ -112,12 +118,28 @@ var GameUI = React.createClass({
   },
 
   /**
-   * @param {SyntheticInputEvent} e
+   * @param {SyntheticInputEvent|WheelEvent} e
    */
   setPixelSize(e) {
-    var pixelSize = parseInt(e.target.value);
+    var center = this.visualCenter();
+    var pixelSize;
+
+    if (e.target === this.refs.pixelInput.getDOMNode()) {
+      pixelSize = parseInt(e.target.value);
+    } else {
+      // FIXME overflow
+      center = {
+        x: this.state.x.add(Math.round(e.clientX / this.state.pixelSize)),
+        y: this.state.y.add(Math.round(e.clientY / this.state.pixelSize))
+      };
+      if (e.deltaY > 0) {
+        pixelSize = this.state.pixelSize - 1;
+      } else if (e.deltaY < 0) {
+        pixelSize = this.state.pixelSize + 1;
+      }
+    }
+
     if (!isNaN(pixelSize) && pixelSize >= 1 && pixelSize <= 40) {
-      var center = this.visualCenter();
       var x = center.x;
       var y = center.y;
 
@@ -196,11 +218,14 @@ var GameUI = React.createClass({
   },
 
   componentDidMount() {
-    this.updateViewportSize();
+    this.debouncedResize = debounce(this.setPixelSize, 10);
+    window.addEventListener('wheel', this.debouncedResize);
     window.addEventListener('resize', this.handleWindowResize);
+    this.start();
   },
 
   componentWillUnmount() {
+    window.removeEventListener('wheel', this.debouncedResize);
     window.removeEventListener('resize', this.handleWindowResize);
   },
 
@@ -303,14 +328,15 @@ var GameUI = React.createClass({
       );
     }, this);
 
-    var viewport = `${this.state.x.toString()}x${this.state.y.toString()} ${this.state.width}x${this.state.height}`;
+    var center = this.visualCenter();
+    var viewport = `${this.state.x}x${this.state.y} ${this.state.width}x${this.state.height}`;
 
     return (
-      <div className='Game-controls Game-controls--expanded' onMouseDown={this.captureMouse}>
+      <div className='Game-controls Game-controls--expanded' onMouseDown={this.captureMouse} onWheel={this.captureMouse}>
         <div className='Game-viewport'>{viewport}</div>
         <div className='Game-controls-row'>
           <label htmlFor='id-pixel-size'>pixel size</label>
-          <input id='id-pixel-size' value={this.state.pixelSize} type='number' onChange={this.setPixelSize} />
+          <input ref='pixelInput' id='id-pixel-size' value={this.state.pixelSize} type='number' onChange={this.setPixelSize} />
         </div>
         <div className='Game-controls-row'>
           <label htmlFor='id-interval'>interval</label>
