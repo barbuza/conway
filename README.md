@@ -16,9 +16,11 @@
 
 ## usage
 
+* firefox or chrome
 * ur in the center of the universe
 * drag'n'drop to move viewport
 * scroll ur wheel to zoom in/out (i.e. change `pixelSize`)
 * turn on/off isolated regions highlight
 * select between `setTimeout` and `requestAnimationFrame` mode
 * click on the name of ship to drop it into viewport center
+* load `ILbgPAgMiH` - there are 3 Enterprise ships, one Crab and one 77P6H1V1 (whatever it is)
