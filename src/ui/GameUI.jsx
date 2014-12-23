@@ -10,9 +10,12 @@ var Game = require('./../Game');
 var geometry = require('../geometry');
 var subtractUnsignedLong = require('../subtractUnsignedLong');
 
+var Api = require('../api');
+
 var Button = require('./Button.jsx');
 var Grid = require('./Grid.jsx');
 var Area = require('./Area.jsx');
+
 
 require('./GameUI.styl');
 
@@ -221,7 +224,6 @@ var GameUI = React.createClass({
     this.debouncedResize = debounce(this.setPixelSize, 10);
     window.addEventListener('wheel', this.debouncedResize);
     window.addEventListener('resize', this.handleWindowResize);
-    this.start();
   },
 
   componentWillUnmount() {
@@ -361,6 +363,14 @@ var GameUI = React.createClass({
         <div className='Game-shipsMenu'>
             {shipsMenu}
         </div>
+        <div className='Game-buttons'>
+          <Button
+            disabled={this.state.running || this.state.saving || this.state.loading}
+            onClick={this.save}>{this.state.saving ? 'saving...' : 'save'}</Button>
+          <Button
+            disabled={this.state.running || this.state.saving || this.state.loading}
+            onClick={this.load}>{this.state.loading ? 'loading...' : 'load'}</Button>
+        </div>
         <div className='Game-controls-toggle' onClick={this.toggleMenu}>collapse</div>
       </div>
     );
@@ -370,6 +380,84 @@ var GameUI = React.createClass({
     this.setState({
       showMenu: !this.state.showMenu
     });
+  },
+
+  save() {
+    this.setState({
+      saving: true
+    });
+
+    var regions = this.state.game.regions.map(function(region) {
+      return {
+        x: region.rect.left.toString(),
+        y: region.rect.top.toString(),
+        data: geometry.clone(region.data)
+      };
+    });
+
+    Api.storeGame({
+      x: this.state.x.toString(),
+      y: this.state.y.toString(),
+      pixelSize: this.state.pixelSize,
+      generation: this.state.game.generation,
+      regions: regions
+    }).then(function(gameId) {
+
+      alert('your game id is ' + gameId);
+
+    }).catch(function(e) {
+
+      alert('game was not saved ;[')
+      console.log(e);
+
+    }).finally(function() {
+      if (this.isMounted()) {
+        this.setState({
+          saving: false
+        });
+      }
+    }.bind(this));
+
+  },
+
+  load() {
+    this.setState({
+      loading: true
+    });
+    var gameId = prompt('game id ?');
+    Api.getData(gameId).then(function({x, y, pixelSize, generation, regions}) {
+
+      var game = new Game(Long.MAX_UNSIGNED_VALUE, Long.MAX_UNSIGNED_VALUE);
+
+      game.regions = regions.map(function({x, y, data}) {
+        var origin = new geometry.Point(Long.fromString(x, true, 10), Long.fromString(y, true, 10));
+        var size = new geometry.Size(geometry.width(data), geometry.height(data));
+        var rect = new geometry.Rect(origin, size);
+        return new Region(rect, geometry.clone(data));
+      });
+
+      game.generation = generation;
+
+      this.setState({
+        running: false,
+        x: Long.fromString(x, true, 10),
+        y: Long.fromString(y, true, 10),
+        pixelSize,
+        game
+      });
+
+    }.bind(this)).catch(function(e) {
+
+      alert('game data loading failed ;{')
+      console.log(e);
+
+    }).finally(function() {
+      if (this.isMounted()) {
+        this.setState({
+          loading: false
+        });
+      }
+    }.bind(this));
   },
 
   render() {
