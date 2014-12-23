@@ -444,7 +444,7 @@ var GameUI = React.createClass({
         y: Long.fromString(y, true, 10),
         pixelSize,
         game
-      });
+      }, this.updateViewportSize);
 
     }.bind(this)).catch(function(e) {
 
