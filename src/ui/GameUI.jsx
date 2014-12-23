@@ -32,7 +32,8 @@ var PATTERNS = [
   require('../../patterns/enterprise.cells'),
   require('../../patterns/seal.cells'),
   require('../../patterns/glider.cells'),
-  require('../../patterns/77p6h1v1.cells')
+  require('../../patterns/77p6h1v1.cells'),
+  require('../../patterns/gosperglidergun.cells')
 ];
 
 
