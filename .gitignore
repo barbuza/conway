@@ -1,0 +1,9 @@
+/node_modules
+/.idea
+/build
+/src
+/patterns
+/.editorconfig
+/*.json
+/npm-debug.log
+/webpack.config.js
